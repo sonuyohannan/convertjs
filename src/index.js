@@ -1,4 +1,7 @@
 const url = require('url');
+// const middleware = require('./middleware/logger');
+
+
 
 
 class ConvertJs {
@@ -20,34 +23,36 @@ class ConvertJs {
   }
 
   listen(port, callback) {
-      const http = require('http');
-      const { createResponse } = require('./utils/helpers');
-
-      const server = http.createServer((req, res) => {
+    const http = require('http');
+    const { createResponse } = require('./utils/helpers');
+  
+    const server = http.createServer((req, res) => {
+      // Parse the URL
+      const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
       
-        const parsedUrl = new URL(req.url, `http://${req.headers.host}`);     
-        req.query = Object.fromEntries(parsedUrl.searchParams.entries());
-
-          // Apply middleware
-          this.middleware.forEach((mw) => mw(req, res));
-
-          // Extend response
-          createResponse(res);
-
-          // Route matching
-          const route = this.routes.find(
-              (r) => r.method === req.method && r.path === req.url
-          );
-
-          if (route) {
-              route.handler(req, res);
-          } else {
-              res.statusCode = 404;
-              res.send('Route not found');
-          }
-      });
-
-      server.listen(port, callback);
+      // Extract query parameters and attach to req.query
+      req.query = Object.fromEntries(parsedUrl.searchParams.entries());
+  
+      // Apply middleware
+      this.middleware.forEach((mw) => mw(req, res));
+  
+      // Extend response
+      createResponse(res);
+  
+      // Route matching: compare only the pathname
+      const route = this.routes.find(
+        (r) => r.method === req.method && r.path === parsedUrl.pathname
+      );
+  
+      if (route) {
+        route.handler(req, res);
+      } else {
+        res.statusCode = 404;
+        res.send('Route not found');
+      }
+    });
+  
+    server.listen(port, callback);
   }
 }
 

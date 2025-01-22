@@ -1,12 +1,17 @@
 const ConvertJs = require('./src/index'); // Import your framework
 const { createResponse } = require('./src/utils/helpers'); // Import helpers
 const logger = require('./src/middleware/logger'); // Import logger middleware
+const bodyParser = require('./middleware/bodyparser');
 
 // Create a new instance of the framework
 const app = new ConvertJs();
 
 // Use the logger middleware
 app.use(logger);
+
+// Use the bodyParser middleware
+app.use(bodyParser);
+
 
 // Define a GET route for the root
 app.get('/', (req, res) => {
@@ -48,9 +53,8 @@ app.post('/api/data', (req, res) => {
 //define a route for testing  the query parameter handling
 app.get('/search', (req, res) => {
     createResponse(res);
-    res.send(`Received query parameters: ${JSON.stringify(req.query)}`);
+    res.send({ query: req.query });
 
-    // res.send({ query: req.query });
   });
 
 // Define a route for testing error handling
@@ -58,6 +62,15 @@ app.get('/error', (req, res) => {
   createResponse(res);
   res.sendError('Something went wrong!', 500);
 });
+
+// Define your routes
+app.post('/submit', (req, res) => {
+  // Access parsed body data
+  const { name, age } = req.body;
+  res.send(`Received name: ${name}, age: ${age}`);
+});
+
+
 
 // Start the server
 app.listen(3000, () => {
